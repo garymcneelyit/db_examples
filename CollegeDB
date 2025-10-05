@@ -1,0 +1,199 @@
+
+
+Database Name: CollegeDB
+Schema Overview
+Table	Description
+Departments	Academic departments (IT, Math, Business, etc.)
+Courses	Course catalog with credits and prerequisites
+Students	Student records and contact details
+Faculty	Professors, lecturers, and instructors
+Classrooms	Physical or virtual class locations
+Semesters	Academic terms (Fall 2025, Spring 2026, etc.)
+Enrollments	Student registrations per semester and course
+Grades	Marks and grade letters
+Payments	Tuition and fee payments
+Programs	Degree or diploma programs
+Subjects	Detailed subjects linked to courses
+Schedules	Timetable and class schedules
+
+
+######
+
+-- Create the database
+CREATE DATABASE CollegeDB;
+USE CollegeDB;
+
+-- 1. Departments
+CREATE TABLE Departments (
+    DepartmentID INT AUTO_INCREMENT PRIMARY KEY,
+    DepartmentName VARCHAR(150) NOT NULL,
+    HeadOfDepartment VARCHAR(150),
+    Phone VARCHAR(50),
+    Email VARCHAR(100)
+);
+
+-- 2. Programs (Degree or Diploma)
+CREATE TABLE Programs (
+    ProgramID INT AUTO_INCREMENT PRIMARY KEY,
+    ProgramName VARCHAR(150) NOT NULL,
+    DepartmentID INT,
+    DurationYears INT,
+    Description TEXT,
+    FOREIGN KEY (DepartmentID) REFERENCES Departments(DepartmentID)
+);
+
+-- 3. Courses
+CREATE TABLE Courses (
+    CourseID INT AUTO_INCREMENT PRIMARY KEY,
+    ProgramID INT,
+    CourseCode VARCHAR(20) UNIQUE,
+    CourseName VARCHAR(150) NOT NULL,
+    Credits INT,
+    SemesterOffered INT,
+    FOREIGN KEY (ProgramID) REFERENCES Programs(ProgramID)
+);
+
+-- 4. Subjects (More granular topics inside courses)
+CREATE TABLE Subjects (
+    SubjectID INT AUTO_INCREMENT PRIMARY KEY,
+    CourseID INT,
+    SubjectName VARCHAR(150) NOT NULL,
+    Description TEXT,
+    FOREIGN KEY (CourseID) REFERENCES Courses(CourseID)
+);
+
+-- 5. Faculty
+CREATE TABLE Faculty (
+    FacultyID INT AUTO_INCREMENT PRIMARY KEY,
+    DepartmentID INT,
+    FirstName VARCHAR(100) NOT NULL,
+    LastName VARCHAR(100) NOT NULL,
+    Email VARCHAR(100),
+    Phone VARCHAR(50),
+    Position VARCHAR(100), -- Professor, Lecturer, Assistant, etc.
+    HireDate DATE DEFAULT CURRENT_DATE,
+    Salary DECIMAL(10,2),
+    FOREIGN KEY (DepartmentID) REFERENCES Departments(DepartmentID)
+);
+
+-- 6. Students
+CREATE TABLE Students (
+    StudentID INT AUTO_INCREMENT PRIMARY KEY,
+    ProgramID INT,
+    FirstName VARCHAR(100) NOT NULL,
+    LastName VARCHAR(100) NOT NULL,
+    Gender VARCHAR(10),
+    DateOfBirth DATE,
+    Phone VARCHAR(50),
+    Email VARCHAR(100),
+    Address VARCHAR(255),
+    City VARCHAR(100),
+    State VARCHAR(100),
+    Country VARCHAR(100),
+    AdmissionDate DATE DEFAULT CURRENT_DATE,
+    FOREIGN KEY (ProgramID) REFERENCES Programs(ProgramID)
+);
+
+-- 7. Semesters
+CREATE TABLE Semesters (
+    SemesterID INT AUTO_INCREMENT PRIMARY KEY,
+    SemesterName VARCHAR(100) NOT NULL, -- e.g., Fall 2025
+    StartDate DATE NOT NULL,
+    EndDate DATE NOT NULL
+);
+
+-- 8. Classrooms
+CREATE TABLE Classrooms (
+    ClassroomID INT AUTO_INCREMENT PRIMARY KEY,
+    RoomNumber VARCHAR(50) NOT NULL,
+    Building VARCHAR(100),
+    Capacity INT
+);
+
+-- 9. Schedules
+CREATE TABLE Schedules (
+    ScheduleID INT AUTO_INCREMENT PRIMARY KEY,
+    CourseID INT,
+    FacultyID INT,
+    ClassroomID INT,
+    SemesterID INT,
+    DayOfWeek VARCHAR(20), -- Monday, Tuesday, etc.
+    StartTime TIME,
+    EndTime TIME,
+    FOREIGN KEY (CourseID) REFERENCES Courses(CourseID),
+    FOREIGN KEY (FacultyID) REFERENCES Faculty(FacultyID),
+    FOREIGN KEY (ClassroomID) REFERENCES Classrooms(ClassroomID),
+    FOREIGN KEY (SemesterID) REFERENCES Semesters(SemesterID)
+);
+
+-- 10. Enrollments
+CREATE TABLE Enrollments (
+    EnrollmentID INT AUTO_INCREMENT PRIMARY KEY,
+    StudentID INT,
+    CourseID INT,
+    SemesterID INT,
+    EnrollmentDate DATETIME DEFAULT CURRENT_TIMESTAMP,
+    Status VARCHAR(50) DEFAULT 'Active',
+    FOREIGN KEY (StudentID) REFERENCES Students(StudentID),
+    FOREIGN KEY (CourseID) REFERENCES Courses(CourseID),
+    FOREIGN KEY (SemesterID) REFERENCES Semesters(SemesterID)
+);
+
+-- 11. Grades
+CREATE TABLE Grades (
+    GradeID INT AUTO_INCREMENT PRIMARY KEY,
+    EnrollmentID INT,
+    ExamScore DECIMAL(5,2),
+    GradeLetter VARCHAR(2),
+    GradeDate DATE DEFAULT CURRENT_DATE,
+    FOREIGN KEY (EnrollmentID) REFERENCES Enrollments(EnrollmentID)
+);
+
+-- 12. Payments
+CREATE TABLE Payments (
+    PaymentID INT AUTO_INCREMENT PRIMARY KEY,
+    StudentID INT,
+    PaymentDate DATETIME DEFAULT CURRENT_TIMESTAMP,
+    Amount DECIMAL(10,2),
+    PaymentMethod VARCHAR(50), -- Cash, Card, Bank Transfer, etc.
+    Notes TEXT,
+    FOREIGN KEY (StudentID) REFERENCES Students(StudentID)
+);
+
+-- 🔹 Sample Data
+
+INSERT INTO Departments (DepartmentName, HeadOfDepartment, Phone, Email)
+VALUES
+('Computer Science', 'Dr. Alan Smith', '+1-555-1111', 'cs@college.edu'),
+('Business Administration', 'Dr. Maria Green', '+1-555-2222', 'ba@college.edu');
+
+INSERT INTO Programs (ProgramName, DepartmentID, DurationYears, Description)
+VALUES
+('Bachelor of Computer Science', 1, 4, 'Undergraduate CS program'),
+('Master of Business Administration', 2, 2, 'Graduate business program');
+
+INSERT INTO Courses (ProgramID, CourseCode, CourseName, Credits, SemesterOffered)
+VALUES
+(1, 'CS101', 'Introduction to Programming', 3, 1),
+(1, 'CS201', 'Database Systems', 4, 3),
+(2, 'BA101', 'Principles of Management', 3, 1);
+
+INSERT INTO Faculty (DepartmentID, FirstName, LastName, Email, Position, Salary)
+VALUES
+(1, 'Alice', 'Johnson', 'alice.johnson@college.edu', 'Professor', 70000),
+(2, 'Mark', 'Thompson', 'mark.thompson@college.edu', 'Lecturer', 55000);
+
+INSERT INTO Students (ProgramID, FirstName, LastName, Gender, DateOfBirth, Email, City, Country)
+VALUES
+(1, 'John', 'Smith', 'Male', '2004-03-12', 'john.smith@college.edu', 'Austin', 'USA'),
+(2, 'Linda', 'Brown', 'Female', '2002-07-25', 'linda.brown@college.edu', 'Dallas', 'USA');
+
+INSERT INTO Semesters (SemesterName, StartDate, EndDate)
+VALUES
+('Fall 2025', '2025-09-01', '2025-12-20'),
+('Spring 2026', '2026-01-15', '2026-05-10');
+
+INSERT INTO Classrooms (RoomNumber, Building, Capacity)
+VALUES
+('101', 'Main Building', 30),
+('202', 'Science Hall', 40);
