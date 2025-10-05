@@ -1,0 +1,170 @@
+Database Name: TrainingCompanyDB
+Schema Overview
+Table	Description
+TrainingCenters	Training branches/locations
+Courses	Course catalog
+Trainers	Instructors or training staff
+Trainees	Students or participants
+CourseSchedules	When and where courses are conducted
+Enrollments	Who enrolled in which course and when
+Payments	Fees and payment tracking
+Certifications	Certificates issued after completion
+Departments	For grouping courses (IT, HR, Finance, etc.)
+CourseMaterials	PDFs, slides, or online resource tracking
+
+
+########
+
+-- Create Database
+CREATE DATABASE TrainingCompanyDB;
+USE TrainingCompanyDB;
+
+-- 1. Training Centers
+CREATE TABLE TrainingCenters (
+    CenterID INT AUTO_INCREMENT PRIMARY KEY,
+    CenterName VARCHAR(150) NOT NULL,
+    Address VARCHAR(255),
+    City VARCHAR(100),
+    State VARCHAR(100),
+    Country VARCHAR(100),
+    Phone VARCHAR(50),
+    Email VARCHAR(100)
+);
+
+-- 2. Departments
+CREATE TABLE Departments (
+    DepartmentID INT AUTO_INCREMENT PRIMARY KEY,
+    DepartmentName VARCHAR(100) NOT NULL,
+    Description TEXT
+);
+
+-- 3. Courses
+CREATE TABLE Courses (
+    CourseID INT AUTO_INCREMENT PRIMARY KEY,
+    DepartmentID INT,
+    CourseName VARCHAR(150) NOT NULL,
+    Description TEXT,
+    DurationWeeks INT,
+    Fee DECIMAL(10,2),
+    Level VARCHAR(50), -- Beginner, Intermediate, Advanced
+    FOREIGN KEY (DepartmentID) REFERENCES Departments(DepartmentID)
+);
+
+-- 4. Trainers
+CREATE TABLE Trainers (
+    TrainerID INT AUTO_INCREMENT PRIMARY KEY,
+    FirstName VARCHAR(100) NOT NULL,
+    LastName VARCHAR(100) NOT NULL,
+    Email VARCHAR(100),
+    Phone VARCHAR(50),
+    Expertise VARCHAR(200),
+    HireDate DATE DEFAULT CURRENT_DATE,
+    Salary DECIMAL(10,2),
+    CenterID INT,
+    FOREIGN KEY (CenterID) REFERENCES TrainingCenters(CenterID)
+);
+
+-- 5. Trainees
+CREATE TABLE Trainees (
+    TraineeID INT AUTO_INCREMENT PRIMARY KEY,
+    FirstName VARCHAR(100) NOT NULL,
+    LastName VARCHAR(100) NOT NULL,
+    Email VARCHAR(100),
+    Phone VARCHAR(50),
+    Address VARCHAR(200),
+    City VARCHAR(100),
+    State VARCHAR(100),
+    Country VARCHAR(100),
+    RegistrationDate DATE DEFAULT CURRENT_DATE
+);
+
+-- 6. Course Schedules
+CREATE TABLE CourseSchedules (
+    ScheduleID INT AUTO_INCREMENT PRIMARY KEY,
+    CourseID INT,
+    TrainerID INT,
+    CenterID INT,
+    StartDate DATE NOT NULL,
+    EndDate DATE NOT NULL,
+    Mode VARCHAR(50) DEFAULT 'Onsite', -- Onsite or Online
+    MaxCapacity INT DEFAULT 20,
+    FOREIGN KEY (CourseID) REFERENCES Courses(CourseID),
+    FOREIGN KEY (TrainerID) REFERENCES Trainers(TrainerID),
+    FOREIGN KEY (CenterID) REFERENCES TrainingCenters(CenterID)
+);
+
+-- 7. Enrollments
+CREATE TABLE Enrollments (
+    EnrollmentID INT AUTO_INCREMENT PRIMARY KEY,
+    ScheduleID INT,
+    TraineeID INT,
+    EnrollmentDate DATETIME DEFAULT CURRENT_TIMESTAMP,
+    Status VARCHAR(50) DEFAULT 'Active', -- Active, Completed, Cancelled
+    FOREIGN KEY (ScheduleID) REFERENCES CourseSchedules(ScheduleID),
+    FOREIGN KEY (TraineeID) REFERENCES Trainees(TraineeID)
+);
+
+-- 8. Payments
+CREATE TABLE Payments (
+    PaymentID INT AUTO_INCREMENT PRIMARY KEY,
+    EnrollmentID INT,
+    PaymentDate DATETIME DEFAULT CURRENT_TIMESTAMP,
+    Amount DECIMAL(10,2),
+    PaymentMethod VARCHAR(50), -- Cash, Card, Bank Transfer, Online
+    Notes TEXT,
+    FOREIGN KEY (EnrollmentID) REFERENCES Enrollments(EnrollmentID)
+);
+
+-- 9. Certifications
+CREATE TABLE Certifications (
+    CertificateID INT AUTO_INCREMENT PRIMARY KEY,
+    EnrollmentID INT,
+    IssueDate DATE DEFAULT CURRENT_DATE,
+    CertificateNumber VARCHAR(100) UNIQUE,
+    Grade VARCHAR(10),
+    FOREIGN KEY (EnrollmentID) REFERENCES Enrollments(EnrollmentID)
+);
+
+-- 10. Course Materials
+CREATE TABLE CourseMaterials (
+    MaterialID INT AUTO_INCREMENT PRIMARY KEY,
+    CourseID INT,
+    Title VARCHAR(150),
+    FileType VARCHAR(50), -- PDF, Video, Slide, etc.
+    URL VARCHAR(255),
+    UploadDate DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (CourseID) REFERENCES Courses(CourseID)
+);
+
+-- 🔹 Sample Data
+
+INSERT INTO TrainingCenters (CenterName, Address, City, State, Country, Phone, Email)
+VALUES
+('Tech Skills Academy', '123 Main St', 'Austin', 'TX', 'USA', '+1-555-1111', 'info@techskills.com'),
+('Global Training Hub', '456 West Ave', 'Dallas', 'TX', 'USA', '+1-555-2222', 'contact@globalhub.com');
+
+INSERT INTO Departments (DepartmentName, Description)
+VALUES
+('Information Technology', 'IT courses such as networking, programming, and cybersecurity'),
+('Business Management', 'Business, HR, and management-related training');
+
+INSERT INTO Courses (DepartmentID, CourseName, Description, DurationWeeks, Fee, Level)
+VALUES
+(1, 'Python Programming', 'Learn Python basics to advanced topics', 6, 600.00, 'Intermediate'),
+(1, 'Network Fundamentals', 'CCNA-level networking essentials', 8, 750.00, 'Beginner'),
+(2, 'Project Management', 'Learn PMP concepts and practices', 10, 900.00, 'Advanced');
+
+INSERT INTO Trainers (FirstName, LastName, Email, Phone, Expertise, Salary, CenterID)
+VALUES
+('Alice', 'Johnson', 'alice.j@techskills.com', '+1-555-3333', 'Python, Web Development', 5000.00, 1),
+('Mark', 'Thompson', 'mark.t@globalhub.com', '+1-555-4444', 'Networking, CCNA', 4800.00, 2);
+
+INSERT INTO Trainees (FirstName, LastName, Email, Phone, City, Country)
+VALUES
+('John', 'Smith', 'john.smith@email.com', '+1-555-5555', 'Austin', 'USA'),
+('Linda', 'Brown', 'linda.brown@email.com', '+1-555-6666', 'Dallas', 'USA');
+
+INSERT INTO CourseSchedules (CourseID, TrainerID, CenterID, StartDate, EndDate, Mode)
+VALUES
+(1, 1, 1, '2025-10-15', '2025-11-30', 'Online'),
+(2, 2, 2, '2025-11-01', '2025-12-20', 'Onsite');
