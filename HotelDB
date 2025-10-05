@@ -1,0 +1,157 @@
+Database Name: HotelDB
+📋 Schema Overview
+Table	Description
+Hotels	Hotel branches or locations
+Rooms	Room information
+Guests	Customer/guest details
+Reservations	Booking and check-in/out data
+Payments	Payment records
+Employees	Hotel staff details
+Services	Extra services (laundry, spa, food, etc.)
+ServiceTransactions	Guest service usage records
+RoomTypes	Defines room pricing and features
+RoomStatus	Tracks room availability status
+
+
+
+###########
+
+-- Create the database
+CREATE DATABASE HotelDB;
+USE HotelDB;
+
+-- 1. Hotels
+CREATE TABLE Hotels (
+    HotelID INT AUTO_INCREMENT PRIMARY KEY,
+    HotelName VARCHAR(150) NOT NULL,
+    Address VARCHAR(255),
+    City VARCHAR(100),
+    Country VARCHAR(100),
+    Phone VARCHAR(50),
+    Email VARCHAR(100)
+);
+
+-- 2. Room Types
+CREATE TABLE RoomTypes (
+    RoomTypeID INT AUTO_INCREMENT PRIMARY KEY,
+    TypeName VARCHAR(100) NOT NULL,       -- e.g. Deluxe, Suite, Standard
+    Description TEXT,
+    PricePerNight DECIMAL(10,2) NOT NULL,
+    MaxOccupancy INT NOT NULL
+);
+
+-- 3. Room Status (Available, Occupied, Maintenance)
+CREATE TABLE RoomStatus (
+    StatusID INT AUTO_INCREMENT PRIMARY KEY,
+    StatusName VARCHAR(50) NOT NULL
+);
+
+-- 4. Rooms
+CREATE TABLE Rooms (
+    RoomID INT AUTO_INCREMENT PRIMARY KEY,
+    HotelID INT,
+    RoomNumber VARCHAR(20) NOT NULL,
+    RoomTypeID INT,
+    StatusID INT DEFAULT 1, -- Default: Available
+    FOREIGN KEY (HotelID) REFERENCES Hotels(HotelID),
+    FOREIGN KEY (RoomTypeID) REFERENCES RoomTypes(RoomTypeID),
+    FOREIGN KEY (StatusID) REFERENCES RoomStatus(StatusID)
+);
+
+-- 5. Guests
+CREATE TABLE Guests (
+    GuestID INT AUTO_INCREMENT PRIMARY KEY,
+    FirstName VARCHAR(100) NOT NULL,
+    LastName VARCHAR(100) NOT NULL,
+    Phone VARCHAR(50),
+    Email VARCHAR(100),
+    Address VARCHAR(200),
+    City VARCHAR(100),
+    Country VARCHAR(100),
+    IDType VARCHAR(50),  -- Passport, Driver License, etc.
+    IDNumber VARCHAR(50)
+);
+
+-- 6. Employees
+CREATE TABLE Employees (
+    EmployeeID INT AUTO_INCREMENT PRIMARY KEY,
+    FirstName VARCHAR(100) NOT NULL,
+    LastName VARCHAR(100) NOT NULL,
+    Position VARCHAR(100),
+    Phone VARCHAR(50),
+    Email VARCHAR(100),
+    HireDate DATE DEFAULT CURRENT_DATE,
+    Salary DECIMAL(10,2),
+    HotelID INT,
+    FOREIGN KEY (HotelID) REFERENCES Hotels(HotelID)
+);
+
+-- 7. Reservations
+CREATE TABLE Reservations (
+    ReservationID INT AUTO_INCREMENT PRIMARY KEY,
+    GuestID INT,
+    RoomID INT,
+    CheckInDate DATE NOT NULL,
+    CheckOutDate DATE NOT NULL,
+    NumGuests INT,
+    ReservationStatus VARCHAR(50) DEFAULT 'Booked',  -- Booked, Checked-in, Cancelled, Completed
+    CreatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (GuestID) REFERENCES Guests(GuestID),
+    FOREIGN KEY (RoomID) REFERENCES Rooms(RoomID)
+);
+
+-- 8. Payments
+CREATE TABLE Payments (
+    PaymentID INT AUTO_INCREMENT PRIMARY KEY,
+    ReservationID INT,
+    PaymentDate DATETIME DEFAULT CURRENT_TIMESTAMP,
+    Amount DECIMAL(10,2),
+    PaymentMethod VARCHAR(50),  -- Cash, Card, Online
+    FOREIGN KEY (ReservationID) REFERENCES Reservations(ReservationID)
+);
+
+-- 9. Services
+CREATE TABLE Services (
+    ServiceID INT AUTO_INCREMENT PRIMARY KEY,
+    ServiceName VARCHAR(100) NOT NULL,   -- e.g. Laundry, Spa, Room Service
+    Description TEXT,
+    Price DECIMAL(10,2)
+);
+
+-- 10. Service Transactions
+CREATE TABLE ServiceTransactions (
+    ServiceTransactionID INT AUTO_INCREMENT PRIMARY KEY,
+    ReservationID INT,
+    ServiceID INT,
+    Quantity INT DEFAULT 1,
+    TotalAmount DECIMAL(10,2),
+    TransactionDate DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (ReservationID) REFERENCES Reservations(ReservationID),
+    FOREIGN KEY (ServiceID) REFERENCES Services(ServiceID)
+);
+
+-- 11. Sample Data
+INSERT INTO Hotels (HotelName, Address, City, Country, Phone, Email)
+VALUES
+('Sunrise Resort', '123 Beach Ave', 'Miami', 'USA', '+1-555-1000', 'info@sunrise.com'),
+('Mountain View Inn', '456 Hill Rd', 'Denver', 'USA', '+1-555-2000', 'info@mountainview.com');
+
+INSERT INTO RoomTypes (TypeName, Description, PricePerNight, MaxOccupancy)
+VALUES
+('Standard', 'Basic room with queen bed', 80.00, 2),
+('Deluxe', 'Larger room with balcony and king bed', 150.00, 3),
+('Suite', 'Luxury suite with living area', 250.00, 4);
+
+INSERT INTO RoomStatus (StatusName) VALUES ('Available'), ('Occupied'), ('Maintenance');
+
+INSERT INTO Rooms (HotelID, RoomNumber, RoomTypeID, StatusID)
+VALUES
+(1, '101', 1, 1),
+(1, '102', 2, 1),
+(2, '201', 3, 1);
+
+INSERT INTO Services (ServiceName, Description, Price)
+VALUES
+('Laundry', 'Wash and fold laundry service', 15.00),
+('Room Service', 'In-room dining', 25.00),
+('Spa', 'Relaxing spa treatment', 60.00);
