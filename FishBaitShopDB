@@ -1,0 +1,221 @@
+Database Name: FishBaitShopDB
+Schema Overview
+Table	Description
+Customers	Customer details
+Employees	Shop staff
+Suppliers	Product suppliers (bait, gear, etc.)
+Categories	Product categories (bait, rods, reels, etc.)
+Products	Individual inventory items
+Inventory	Tracks stock levels
+Sales	Sales transactions
+SaleItems	Line items per sale
+Purchases	Orders from suppliers
+PurchaseItems	Items included in supplier orders
+Payments	Customer payments for sales
+
+
+######
+
+
+-- Create Database
+CREATE DATABASE FishBaitShopDB;
+USE FishBaitShopDB;
+
+-- 1. Customers
+CREATE TABLE Customers (
+    CustomerID INT AUTO_INCREMENT PRIMARY KEY,
+    FirstName VARCHAR(100),
+    LastName VARCHAR(100),
+    Phone VARCHAR(50),
+    Email VARCHAR(100),
+    Address VARCHAR(255),
+    City VARCHAR(100),
+    State VARCHAR(100),
+    ZipCode VARCHAR(20),
+    RegistrationDate DATE DEFAULT CURRENT_DATE
+);
+
+-- 2. Employees
+CREATE TABLE Employees (
+    EmployeeID INT AUTO_INCREMENT PRIMARY KEY,
+    FirstName VARCHAR(100),
+    LastName VARCHAR(100),
+    Role VARCHAR(100), -- Cashier, Manager, Stock Clerk
+    Phone VARCHAR(50),
+    Email VARCHAR(100),
+    HireDate DATE DEFAULT CURRENT_DATE,
+    Salary DECIMAL(10,2)
+);
+
+-- 3. Suppliers
+CREATE TABLE Suppliers (
+    SupplierID INT AUTO_INCREMENT PRIMARY KEY,
+    SupplierName VARCHAR(150),
+    ContactPerson VARCHAR(100),
+    Phone VARCHAR(50),
+    Email VARCHAR(100),
+    Address VARCHAR(255),
+    City VARCHAR(100),
+    State VARCHAR(100),
+    ZipCode VARCHAR(20)
+);
+
+-- 4. Categories
+CREATE TABLE Categories (
+    CategoryID INT AUTO_INCREMENT PRIMARY KEY,
+    CategoryName VARCHAR(100),
+    Description TEXT
+);
+
+-- 5. Products
+CREATE TABLE Products (
+    ProductID INT AUTO_INCREMENT PRIMARY KEY,
+    CategoryID INT,
+    SupplierID INT,
+    ProductName VARCHAR(150),
+    Description TEXT,
+    UnitPrice DECIMAL(10,2),
+    CostPrice DECIMAL(10,2),
+    UnitOfMeasure VARCHAR(50), -- Each, Pack, Dozen, etc.
+    Active BOOLEAN DEFAULT TRUE,
+    FOREIGN KEY (CategoryID) REFERENCES Categories(CategoryID),
+    FOREIGN KEY (SupplierID) REFERENCES Suppliers(SupplierID)
+);
+
+-- 6. Inventory
+CREATE TABLE Inventory (
+    InventoryID INT AUTO_INCREMENT PRIMARY KEY,
+    ProductID INT,
+    QuantityInStock INT DEFAULT 0,
+    ReorderLevel INT DEFAULT 10,
+    LastRestocked DATE,
+    FOREIGN KEY (ProductID) REFERENCES Products(ProductID)
+);
+
+-- 7. Sales
+CREATE TABLE Sales (
+    SaleID INT AUTO_INCREMENT PRIMARY KEY,
+    CustomerID INT,
+    EmployeeID INT,
+    SaleDate DATETIME DEFAULT CURRENT_TIMESTAMP,
+    SubTotal DECIMAL(10,2),
+    TaxAmount DECIMAL(10,2),
+    TotalAmount DECIMAL(10,2),
+    PaymentStatus VARCHAR(50) DEFAULT 'Unpaid',
+    FOREIGN KEY (CustomerID) REFERENCES Customers(CustomerID),
+    FOREIGN KEY (EmployeeID) REFERENCES Employees(EmployeeID)
+);
+
+-- 8. Sale Items
+CREATE TABLE SaleItems (
+    SaleItemID INT AUTO_INCREMENT PRIMARY KEY,
+    SaleID INT,
+    ProductID INT,
+    Quantity INT,
+    UnitPrice DECIMAL(10,2),
+    LineTotal DECIMAL(10,2),
+    FOREIGN KEY (SaleID) REFERENCES Sales(SaleID),
+    FOREIGN KEY (ProductID) REFERENCES Products(ProductID)
+);
+
+-- 9. Purchases (Orders from Suppliers)
+CREATE TABLE Purchases (
+    PurchaseID INT AUTO_INCREMENT PRIMARY KEY,
+    SupplierID INT,
+    EmployeeID INT,
+    PurchaseDate DATETIME DEFAULT CURRENT_TIMESTAMP,
+    TotalCost DECIMAL(10,2),
+    Status VARCHAR(50) DEFAULT 'Pending', -- Pending, Received, Cancelled
+    FOREIGN KEY (SupplierID) REFERENCES Suppliers(SupplierID),
+    FOREIGN KEY (EmployeeID) REFERENCES Employees(EmployeeID)
+);
+
+-- 10. Purchase Items
+CREATE TABLE PurchaseItems (
+    PurchaseItemID INT AUTO_INCREMENT PRIMARY KEY,
+    PurchaseID INT,
+    ProductID INT,
+    Quantity INT,
+    CostPrice DECIMAL(10,2),
+    LineTotal DECIMAL(10,2),
+    FOREIGN KEY (PurchaseID) REFERENCES Purchases(PurchaseID),
+    FOREIGN KEY (ProductID) REFERENCES Products(ProductID)
+);
+
+-- 11. Payments
+CREATE TABLE Payments (
+    PaymentID INT AUTO_INCREMENT PRIMARY KEY,
+    SaleID INT,
+    PaymentDate DATETIME DEFAULT CURRENT_TIMESTAMP,
+    AmountPaid DECIMAL(10,2),
+    PaymentMethod VARCHAR(50), -- Cash, Card, MobilePay, etc.
+    ReferenceNumber VARCHAR(100),
+    FOREIGN KEY (SaleID) REFERENCES Sales(SaleID)
+);
+
+-- 🔹 Sample Data
+
+-- Categories
+INSERT INTO Categories (CategoryName, Description)
+VALUES
+('Live Bait', 'Worms, minnows, and other live bait'),
+('Artificial Lures', 'Plastic baits, jigs, and spinners'),
+('Fishing Rods', 'All types of rods'),
+('Fishing Reels', 'Spinning, baitcasting, and fly reels'),
+('Accessories', 'Hooks, lines, sinkers, tackle boxes');
+
+-- Suppliers
+INSERT INTO Suppliers (SupplierName, ContactPerson, Phone, Email, City, State)
+VALUES
+('BaitMaster Supplies', 'Tom Johnson', '555-1111', 'sales@baitmaster.com', 'Springfield', 'IL'),
+('Outdoor Pro Gear', 'Lisa Carter', '555-2222', 'lisa@outdoorpro.com', 'Dallas', 'TX');
+
+-- Products
+INSERT INTO Products (CategoryID, SupplierID, ProductName, Description, UnitPrice, CostPrice, UnitOfMeasure)
+VALUES
+(1, 1, 'Nightcrawlers', 'Live worms, pack of 12', 5.99, 2.00, 'Pack'),
+(2, 2, 'Spinnerbait Lure', 'Multi-color spinnerbait', 7.49, 3.50, 'Each'),
+(3, 2, 'Graphite Rod 7ft', 'Medium action fishing rod', 59.99, 30.00, 'Each'),
+(4, 2, 'Baitcasting Reel', 'High speed gear ratio', 89.99, 45.00, 'Each'),
+(5, 2, 'Tackle Box', 'Plastic box with dividers', 19.99, 10.00, 'Each');
+
+-- Inventory
+INSERT INTO Inventory (ProductID, QuantityInStock, ReorderLevel, LastRestocked)
+VALUES
+(1, 120, 20, '2025-09-28'),
+(2, 80, 10, '2025-09-20'),
+(3, 25, 5, '2025-09-25'),
+(4, 15, 5, '2025-09-22'),
+(5, 40, 10, '2025-09-18');
+
+-- Employees
+INSERT INTO Employees (FirstName, LastName, Role, Phone, Email, Salary)
+VALUES
+('Jake', 'Fisher', 'Manager', '555-3333', 'jake@fishbaitshop.com', 4200.00),
+('Sarah', 'Lynn', 'Cashier', '555-4444', 'sarah@fishbaitshop.com', 3100.00);
+
+-- Customers
+INSERT INTO Customers (FirstName, LastName, Phone, City, State)
+VALUES
+('John', 'Doe', '555-5555', 'Lakeview', 'MO'),
+('Paul', 'Harris', '555-6666', 'Rivertown', 'AR');
+
+-- Sales
+INSERT INTO Sales (CustomerID, EmployeeID, SubTotal, TaxAmount, TotalAmount, PaymentStatus)
+VALUES
+(1, 2, 70.47, 4.23, 74.70, 'Paid'),
+(2, 2, 19.99, 1.20, 21.19, 'Paid');
+
+-- Sale Items
+INSERT INTO SaleItems (SaleID, ProductID, Quantity, UnitPrice, LineTotal)
+VALUES
+(1, 1, 5, 5.99, 29.95),
+(1, 2, 4, 7.49, 29.96),
+(2, 5, 1, 19.99, 19.99);
+
+-- Payments
+INSERT INTO Payments (SaleID, AmountPaid, PaymentMethod)
+VALUES
+(1, 74.70, 'Credit Card'),
+(2, 21.19, 'Cash');
+
