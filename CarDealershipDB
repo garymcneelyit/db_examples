@@ -1,0 +1,185 @@
+
+
+
+Database Name: CarDealershipDB
+Schema Overview
+Table	Description
+Dealerships	Stores multiple dealership branches
+Employees	Sales and service staff
+Customers	Customer information
+VehicleMakes	Car manufacturers
+VehicleModels	Model details (linked to makes)
+Vehicles	Individual vehicles in stock
+Sales	Sales transactions
+Payments	Payment records for sales
+ServiceRecords	Vehicle service and maintenance data
+Parts	Inventory of parts used in service
+ServiceDetails	Parts and labor per service order\
+
+
+#####
+
+-- Create the database
+CREATE DATABASE CarDealershipDB;
+USE CarDealershipDB;
+
+-- 1. Dealerships
+CREATE TABLE Dealerships (
+    DealershipID INT AUTO_INCREMENT PRIMARY KEY,
+    DealershipName VARCHAR(150) NOT NULL,
+    Address VARCHAR(255),
+    City VARCHAR(100),
+    State VARCHAR(100),
+    Country VARCHAR(100),
+    Phone VARCHAR(50),
+    Email VARCHAR(100)
+);
+
+-- 2. Employees
+CREATE TABLE Employees (
+    EmployeeID INT AUTO_INCREMENT PRIMARY KEY,
+    DealershipID INT,
+    FirstName VARCHAR(100) NOT NULL,
+    LastName VARCHAR(100) NOT NULL,
+    Position VARCHAR(100), -- Salesperson, Mechanic, Manager, etc.
+    Phone VARCHAR(50),
+    Email VARCHAR(100),
+    HireDate DATE DEFAULT CURRENT_DATE,
+    Salary DECIMAL(10,2),
+    FOREIGN KEY (DealershipID) REFERENCES Dealerships(DealershipID)
+);
+
+-- 3. Customers
+CREATE TABLE Customers (
+    CustomerID INT AUTO_INCREMENT PRIMARY KEY,
+    FirstName VARCHAR(100) NOT NULL,
+    LastName VARCHAR(100) NOT NULL,
+    Phone VARCHAR(50),
+    Email VARCHAR(100),
+    Address VARCHAR(200),
+    City VARCHAR(100),
+    State VARCHAR(100),
+    Country VARCHAR(100),
+    LicenseNumber VARCHAR(50),
+    RegistrationDate DATE DEFAULT CURRENT_DATE
+);
+
+-- 4. Vehicle Makes
+CREATE TABLE VehicleMakes (
+    MakeID INT AUTO_INCREMENT PRIMARY KEY,
+    MakeName VARCHAR(100) NOT NULL -- e.g., Toyota, Ford, BMW
+);
+
+-- 5. Vehicle Models
+CREATE TABLE VehicleModels (
+    ModelID INT AUTO_INCREMENT PRIMARY KEY,
+    MakeID INT,
+    ModelName VARCHAR(100) NOT NULL,  -- e.g., Corolla, Mustang
+    Year INT,
+    BodyType VARCHAR(50),             -- e.g., Sedan, SUV
+    Transmission VARCHAR(50),         -- Automatic, Manual
+    FuelType VARCHAR(50),
+    FOREIGN KEY (MakeID) REFERENCES VehicleMakes(MakeID)
+);
+
+-- 6. Vehicles
+CREATE TABLE Vehicles (
+    VehicleID INT AUTO_INCREMENT PRIMARY KEY,
+    DealershipID INT,
+    ModelID INT,
+    VIN VARCHAR(50) UNIQUE NOT NULL,     -- Vehicle Identification Number
+    Color VARCHAR(50),
+    Mileage INT DEFAULT 0,
+    PurchasePrice DECIMAL(10,2),
+    SalePrice DECIMAL(10,2),
+    Status VARCHAR(50) DEFAULT 'In Stock', -- In Stock, Sold, Maintenance
+    DateAdded DATE DEFAULT CURRENT_DATE,
+    FOREIGN KEY (DealershipID) REFERENCES Dealerships(DealershipID),
+    FOREIGN KEY (ModelID) REFERENCES VehicleModels(ModelID)
+);
+
+-- 7. Sales
+CREATE TABLE Sales (
+    SaleID INT AUTO_INCREMENT PRIMARY KEY,
+    VehicleID INT,
+    CustomerID INT,
+    EmployeeID INT,
+    SaleDate DATETIME DEFAULT CURRENT_TIMESTAMP,
+    SalePrice DECIMAL(10,2),
+    PaymentStatus VARCHAR(50) DEFAULT 'Pending', -- Pending, Paid, Financed
+    FOREIGN KEY (VehicleID) REFERENCES Vehicles(VehicleID),
+    FOREIGN KEY (CustomerID) REFERENCES Customers(CustomerID),
+    FOREIGN KEY (EmployeeID) REFERENCES Employees(EmployeeID)
+);
+
+-- 8. Payments
+CREATE TABLE Payments (
+    PaymentID INT AUTO_INCREMENT PRIMARY KEY,
+    SaleID INT,
+    PaymentDate DATETIME DEFAULT CURRENT_TIMESTAMP,
+    Amount DECIMAL(10,2),
+    PaymentMethod VARCHAR(50),  -- Cash, Card, Bank Transfer, Financing
+    Notes TEXT,
+    FOREIGN KEY (SaleID) REFERENCES Sales(SaleID)
+);
+
+-- 9. Service Records
+CREATE TABLE ServiceRecords (
+    ServiceID INT AUTO_INCREMENT PRIMARY KEY,
+    VehicleID INT,
+    CustomerID INT,
+    EmployeeID INT, -- Mechanic
+    ServiceDate DATETIME DEFAULT CURRENT_TIMESTAMP,
+    Description TEXT,
+    TotalCost DECIMAL(10,2),
+    Status VARCHAR(50) DEFAULT 'Completed',
+    FOREIGN KEY (VehicleID) REFERENCES Vehicles(VehicleID),
+    FOREIGN KEY (CustomerID) REFERENCES Customers(CustomerID),
+    FOREIGN KEY (EmployeeID) REFERENCES Employees(EmployeeID)
+);
+
+-- 10. Parts
+CREATE TABLE Parts (
+    PartID INT AUTO_INCREMENT PRIMARY KEY,
+    PartName VARCHAR(100) NOT NULL,
+    PartNumber VARCHAR(100),
+    UnitPrice DECIMAL(10,2),
+    QuantityInStock INT DEFAULT 0,
+    ReorderLevel INT DEFAULT 5
+);
+
+-- 11. Service Details (parts/labor per service)
+CREATE TABLE ServiceDetails (
+    ServiceDetailID INT AUTO_INCREMENT PRIMARY KEY,
+    ServiceID INT,
+    PartID INT,
+    QuantityUsed INT DEFAULT 1,
+    LaborCost DECIMAL(10,2),
+    TotalCost DECIMAL(10,2),
+    FOREIGN KEY (ServiceID) REFERENCES ServiceRecords(ServiceID),
+    FOREIGN KEY (PartID) REFERENCES Parts(PartID)
+);
+
+-- Sample Data
+
+INSERT INTO Dealerships (DealershipName, Address, City, State, Country, Phone, Email)
+VALUES
+('AutoStar Motors', '101 Main St', 'Austin', 'TX', 'USA', '+1-555-1000', 'info@autostar.com'),
+('Prime Auto Sales', '202 Central Blvd', 'Dallas', 'TX', 'USA', '+1-555-2000', 'contact@primeauto.com');
+
+INSERT INTO VehicleMakes (MakeName)
+VALUES ('Toyota'), ('Ford'), ('BMW');
+
+INSERT INTO VehicleModels (MakeID, ModelName, Year, BodyType, Transmission, FuelType)
+VALUES
+(1, 'Corolla', 2022, 'Sedan', 'Automatic', 'Gasoline'),
+(2, 'Mustang', 2023, 'Coupe', 'Manual', 'Gasoline'),
+(3, 'X5', 2023, 'SUV', 'Automatic', 'Diesel');
+
+INSERT INTO Vehicles (DealershipID, ModelID, VIN, Color, Mileage, PurchasePrice, SalePrice, Status)
+VALUES
+(1, 1, '1HGBH41JXMN109186', 'White', 10, 18000.00, 22000.00, 'In Stock'),
+(1, 2, '2FTZF1726WCA50122', 'Red', 0, 30000.00, 35000.00, 'In Stock'),
+(2, 3, 'WBANV13578CZ12345', 'Black', 20, 50000.00, 58000.00, 'In Stock');
+
+
