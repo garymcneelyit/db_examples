@@ -1,0 +1,207 @@
+Database Name: CargoShippingDB
+Schema Overview
+Table	Description
+Customers	Client details (importers/exporters)
+Ports	Origin/destination ports or terminals
+Vessels	Ships, trucks, or planes used for cargo
+Routes	Shipping routes between ports
+Shipments	Shipment header info per order
+CargoItems	Individual items or containers within a shipment
+Employees	Staff, captains, or logistics coordinators
+Invoices	Billing for shipments
+Payments	Payment tracking
+Tracking	Real-time shipment tracking events
+InsurancePolicies	Insurance details for shipments
+
+
+#####
+
+-- Create Database
+CREATE DATABASE CargoShippingDB;
+USE CargoShippingDB;
+
+-- 1. Customers
+CREATE TABLE Customers (
+    CustomerID INT AUTO_INCREMENT PRIMARY KEY,
+    CompanyName VARCHAR(150) NOT NULL,
+    ContactPerson VARCHAR(100),
+    Phone VARCHAR(50),
+    Email VARCHAR(100),
+    Address VARCHAR(255),
+    City VARCHAR(100),
+    Country VARCHAR(100),
+    AccountCreated DATE DEFAULT CURRENT_DATE
+);
+
+-- 2. Ports
+CREATE TABLE Ports (
+    PortID INT AUTO_INCREMENT PRIMARY KEY,
+    PortName VARCHAR(150) NOT NULL,
+    City VARCHAR(100),
+    Country VARCHAR(100),
+    Code VARCHAR(10) UNIQUE, -- e.g., “LAX”, “NYC”
+    Type VARCHAR(50) DEFAULT 'Seaport' -- Seaport, Airport, Inland
+);
+
+-- 3. Vessels (Ships / Planes / Trucks)
+CREATE TABLE Vessels (
+    VesselID INT AUTO_INCREMENT PRIMARY KEY,
+    VesselName VARCHAR(150),
+    Type VARCHAR(50), -- Ship, Airplane, Truck
+    CapacityTons DECIMAL(10,2),
+    RegistrationNumber VARCHAR(100),
+    Status VARCHAR(50) DEFAULT 'Active'
+);
+
+-- 4. Routes
+CREATE TABLE Routes (
+    RouteID INT AUTO_INCREMENT PRIMARY KEY,
+    OriginPortID INT,
+    DestinationPortID INT,
+    DistanceNM DECIMAL(10,2), -- nautical miles or km
+    EstimatedTimeDays INT,
+    FOREIGN KEY (OriginPortID) REFERENCES Ports(PortID),
+    FOREIGN KEY (DestinationPortID) REFERENCES Ports(PortID)
+);
+
+-- 5. Employees
+CREATE TABLE Employees (
+    EmployeeID INT AUTO_INCREMENT PRIMARY KEY,
+    FirstName VARCHAR(100),
+    LastName VARCHAR(100),
+    Role VARCHAR(100), -- Captain, Logistic Manager, Clerk
+    Phone VARCHAR(50),
+    Email VARCHAR(100),
+    HireDate DATE DEFAULT CURRENT_DATE,
+    Salary DECIMAL(10,2)
+);
+
+-- 6. Shipments
+CREATE TABLE Shipments (
+    ShipmentID INT AUTO_INCREMENT PRIMARY KEY,
+    CustomerID INT,
+    RouteID INT,
+    VesselID INT,
+    EmployeeID INT, -- person managing the shipment
+    BookingDate DATE DEFAULT CURRENT_DATE,
+    DepartureDate DATE,
+    ArrivalDate DATE,
+    Status VARCHAR(50) DEFAULT 'Scheduled', -- Scheduled, In Transit, Delivered, Cancelled
+    TotalWeight DECIMAL(10,2),
+    FreightCost DECIMAL(10,2),
+    Notes TEXT,
+    FOREIGN KEY (CustomerID) REFERENCES Customers(CustomerID),
+    FOREIGN KEY (RouteID) REFERENCES Routes(RouteID),
+    FOREIGN KEY (VesselID) REFERENCES Vessels(VesselID),
+    FOREIGN KEY (EmployeeID) REFERENCES Employees(EmployeeID)
+);
+
+-- 7. Cargo Items (Containers / Packages)
+CREATE TABLE CargoItems (
+    CargoID INT AUTO_INCREMENT PRIMARY KEY,
+    ShipmentID INT,
+    Description VARCHAR(255),
+    Weight DECIMAL(10,2),
+    Volume DECIMAL(10,2),
+    ContainerNumber VARCHAR(100),
+    Value DECIMAL(12,2),
+    Hazardous BOOLEAN DEFAULT FALSE,
+    FOREIGN KEY (ShipmentID) REFERENCES Shipments(ShipmentID)
+);
+
+-- 8. Invoices
+CREATE TABLE Invoices (
+    InvoiceID INT AUTO_INCREMENT PRIMARY KEY,
+    ShipmentID INT,
+    InvoiceDate DATE DEFAULT CURRENT_DATE,
+    TotalAmount DECIMAL(10,2),
+    TaxAmount DECIMAL(10,2),
+    GrandTotal DECIMAL(10,2),
+    Status VARCHAR(50) DEFAULT 'Unpaid',
+    DueDate DATE,
+    FOREIGN KEY (ShipmentID) REFERENCES Shipments(ShipmentID)
+);
+
+-- 9. Payments
+CREATE TABLE Payments (
+    PaymentID INT AUTO_INCREMENT PRIMARY KEY,
+    InvoiceID INT,
+    PaymentDate DATE DEFAULT CURRENT_DATE,
+    Amount DECIMAL(10,2),
+    PaymentMethod VARCHAR(50), -- Bank Transfer, Credit Card, Cash
+    ReferenceNumber VARCHAR(100),
+    FOREIGN KEY (InvoiceID) REFERENCES Invoices(InvoiceID)
+);
+
+-- 10. Tracking Events
+CREATE TABLE Tracking (
+    TrackingID INT AUTO_INCREMENT PRIMARY KEY,
+    ShipmentID INT,
+    EventDate DATETIME DEFAULT CURRENT_TIMESTAMP,
+    Location VARCHAR(150),
+    Status VARCHAR(100), -- Departed, Arrived, Delayed, Customs Hold, Delivered
+    Notes TEXT,
+    FOREIGN KEY (ShipmentID) REFERENCES Shipments(ShipmentID)
+);
+
+-- 11. Insurance Policies
+CREATE TABLE InsurancePolicies (
+    PolicyID INT AUTO_INCREMENT PRIMARY KEY,
+    ShipmentID INT,
+    ProviderName VARCHAR(150),
+    PolicyNumber VARCHAR(100),
+    CoverageAmount DECIMAL(12,2),
+    PremiumAmount DECIMAL(10,2),
+    IssueDate DATE,
+    ExpiryDate DATE,
+    FOREIGN KEY (ShipmentID) REFERENCES Shipments(ShipmentID)
+);
+
+-- 🔹 Sample Data
+
+INSERT INTO Customers (CompanyName, ContactPerson, Phone, Email, Country)
+VALUES
+('Global Imports Ltd', 'Alice Johnson', '+1-555-1000', 'alice@globalimports.com', 'USA'),
+('Pacific Traders', 'David Wong', '+852-555-2222', 'david@pacifictraders.hk', 'Hong Kong');
+
+INSERT INTO Ports (PortName, City, Country, Code, Type)
+VALUES
+('Port of Los Angeles', 'Los Angeles', 'USA', 'LAX', 'Seaport'),
+('Port of Hong Kong', 'Hong Kong', 'China', 'HKG', 'Seaport'),
+('John F. Kennedy Airport', 'New York', 'USA', 'JFK', 'Airport');
+
+INSERT INTO Vessels (VesselName, Type, CapacityTons, RegistrationNumber)
+VALUES
+('MV Ocean Star', 'Ship', 25000, 'IMO9831234'),
+('Sky Freight 001', 'Airplane', 100, 'N1234SF');
+
+INSERT INTO Employees (FirstName, LastName, Role, Phone, Email, Salary)
+VALUES
+('Robert', 'Smith', 'Captain', '+1-555-3333', 'robert.s@cargo.com', 7500.00),
+('Emily', 'Clark', 'Logistics Manager', '+1-555-4444', 'emily.c@cargo.com', 6200.00);
+
+INSERT INTO Routes (OriginPortID, DestinationPortID, DistanceNM, EstimatedTimeDays)
+VALUES
+(1, 2, 7000, 20),
+(3, 2, 8000, 18);
+
+INSERT INTO Shipments (CustomerID, RouteID, VesselID, EmployeeID, DepartureDate, TotalWeight, FreightCost, Status)
+VALUES
+(1, 1, 1, 2, '2025-10-10', 12000.50, 25000.00, 'In Transit'),
+(2, 2, 2, 1, '2025-10-12', 850.75, 5600.00, 'Scheduled');
+
+INSERT INTO CargoItems (ShipmentID, Description, Weight, Volume, ContainerNumber, Value)
+VALUES
+(1, 'Electronics Containers', 8000, 2000, 'CNT-1001', 500000.00),
+(1, 'Home Appliances', 4000, 1500, 'CNT-1002', 350000.00),
+(2, 'Textile Packages', 850, 500, 'CNT-2001', 120000.00);
+
+INSERT INTO Invoices (ShipmentID, TotalAmount, TaxAmount, GrandTotal, Status, DueDate)
+VALUES
+(1, 25000.00, 2500.00, 27500.00, 'Unpaid', '2025-10-30'),
+(2, 5600.00, 560.00, 6160.00, 'Unpaid', '2025-10-28');
+
+INSERT INTO Tracking (ShipmentID, Location, Status, Notes)
+VALUES
+(1, 'Port of Los Angeles', 'Departed', 'Left origin port successfully'),
+(1, 'Pacific Ocean', 'In Transit', 'Estimated arrival in 15 days');
