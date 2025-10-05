@@ -1,0 +1,154 @@
+#Database name: GroceryStoreDB
+
+#Tables:
+
+#Categories – product categories
+
+#Products – items sold
+
+#Suppliers – product suppliers
+
+#Customers – store customers
+
+#Employees – store staff
+
+#Orders – customer orders
+
+#OrderDetails – items in each order
+
+#Inventory – stock tracking
+
+#Payments – payments and transactions
+
+
+#################
+
+-- Create Database
+CREATE DATABASE GroceryStoreDB;
+USE GroceryStoreDB;
+
+-- 1. Categories
+CREATE TABLE Categories (
+    CategoryID INT AUTO_INCREMENT PRIMARY KEY,
+    CategoryName VARCHAR(100) NOT NULL,
+    Description TEXT
+);
+
+-- 2. Suppliers
+CREATE TABLE Suppliers (
+    SupplierID INT AUTO_INCREMENT PRIMARY KEY,
+    SupplierName VARCHAR(150) NOT NULL,
+    ContactName VARCHAR(100),
+    Phone VARCHAR(50),
+    Email VARCHAR(100),
+    Address VARCHAR(200),
+    City VARCHAR(100),
+    Country VARCHAR(100)
+);
+
+-- 3. Products
+CREATE TABLE Products (
+    ProductID INT AUTO_INCREMENT PRIMARY KEY,
+    ProductName VARCHAR(150) NOT NULL,
+    CategoryID INT,
+    SupplierID INT,
+    UnitPrice DECIMAL(10,2),
+    UnitsInStock INT DEFAULT 0,
+    ReorderLevel INT DEFAULT 10,
+    Discontinued BOOLEAN DEFAULT FALSE,
+    FOREIGN KEY (CategoryID) REFERENCES Categories(CategoryID),
+    FOREIGN KEY (SupplierID) REFERENCES Suppliers(SupplierID)
+);
+
+-- 4. Customers
+CREATE TABLE Customers (
+    CustomerID INT AUTO_INCREMENT PRIMARY KEY,
+    FirstName VARCHAR(100) NOT NULL,
+    LastName VARCHAR(100) NOT NULL,
+    Phone VARCHAR(50),
+    Email VARCHAR(100),
+    Address VARCHAR(200),
+    City VARCHAR(100),
+    Country VARCHAR(100),
+    RegistrationDate DATE DEFAULT CURRENT_DATE
+);
+
+-- 5. Employees
+CREATE TABLE Employees (
+    EmployeeID INT AUTO_INCREMENT PRIMARY KEY,
+    FirstName VARCHAR(100) NOT NULL,
+    LastName VARCHAR(100) NOT NULL,
+    Position VARCHAR(100),
+    Phone VARCHAR(50),
+    Email VARCHAR(100),
+    HireDate DATE DEFAULT CURRENT_DATE,
+    Salary DECIMAL(10,2)
+);
+
+-- 6. Orders
+CREATE TABLE Orders (
+    OrderID INT AUTO_INCREMENT PRIMARY KEY,
+    CustomerID INT,
+    EmployeeID INT,
+    OrderDate DATETIME DEFAULT CURRENT_TIMESTAMP,
+    ShippedDate DATETIME,
+    Status VARCHAR(50) DEFAULT 'Pending',
+    FOREIGN KEY (CustomerID) REFERENCES Customers(CustomerID),
+    FOREIGN KEY (EmployeeID) REFERENCES Employees(EmployeeID)
+);
+
+-- 7. OrderDetails
+CREATE TABLE OrderDetails (
+    OrderDetailID INT AUTO_INCREMENT PRIMARY KEY,
+    OrderID INT,
+    ProductID INT,
+    Quantity INT NOT NULL,
+    UnitPrice DECIMAL(10,2),
+    Discount DECIMAL(5,2) DEFAULT 0.00,
+    FOREIGN KEY (OrderID) REFERENCES Orders(OrderID),
+    FOREIGN KEY (ProductID) REFERENCES Products(ProductID)
+);
+
+-- 8. Inventory
+CREATE TABLE Inventory (
+    InventoryID INT AUTO_INCREMENT PRIMARY KEY,
+    ProductID INT,
+    QuantityIn INT DEFAULT 0,
+    QuantityOut INT DEFAULT 0,
+    TransactionDate DATETIME DEFAULT CURRENT_TIMESTAMP,
+    Notes TEXT,
+    FOREIGN KEY (ProductID) REFERENCES Products(ProductID)
+);
+
+-- 9. Payments
+CREATE TABLE Payments (
+    PaymentID INT AUTO_INCREMENT PRIMARY KEY,
+    OrderID INT,
+    PaymentDate DATETIME DEFAULT CURRENT_TIMESTAMP,
+    Amount DECIMAL(10,2),
+    PaymentMethod VARCHAR(50),
+    FOREIGN KEY (OrderID) REFERENCES Orders(OrderID)
+);
+
+-- Example Data
+INSERT INTO Categories (CategoryName, Description)
+VALUES
+('Fruits', 'Fresh fruits and seasonal produce'),
+('Vegetables', 'All types of vegetables'),
+('Dairy', 'Milk, cheese, and dairy products'),
+('Bakery', 'Breads, pastries, and cakes'),
+('Beverages', 'Water, soft drinks, and juices');
+
+INSERT INTO Suppliers (SupplierName, ContactName, Phone, Country)
+VALUES
+('Fresh Farms Ltd', 'John Green', '+1-555-1111', 'USA'),
+('DairyBest', 'Sarah White', '+1-555-2222', 'USA'),
+('GreenGrowers', 'Alan Smith', '+1-555-3333', 'Canada');
+
+INSERT INTO Products (ProductName, CategoryID, SupplierID, UnitPrice, UnitsInStock)
+VALUES
+('Apple', 1, 1, 0.50, 200),
+('Banana', 1, 1, 0.30, 180),
+('Milk 1L', 3, 2, 2.20, 100),
+('Bread Loaf', 4, 3, 1.50, 60),
+('Orange Juice', 5, 3, 3.00, 80);
