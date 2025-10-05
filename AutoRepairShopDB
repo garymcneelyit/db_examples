@@ -1,0 +1,177 @@
+Database Name: AutoRepairShopDB
+Schema Overview
+Table	Description
+Customers	Stores customer info
+Vehicles	Each customer’s vehicle details
+Employees	Mechanics, receptionists, etc.
+Services	List of available repair/maintenance services
+WorkOrders	Tracks service jobs assigned to employees
+WorkOrderDetails	Specific services and parts used per job
+Parts	Inventory of spare parts
+Suppliers	Vendors supplying parts
+Invoices	Billing for completed jobs
+Payments	Payment tracking for invoices
+
+
+#####
+
+
+-- Create Database
+CREATE DATABASE AutoRepairShopDB;
+USE AutoRepairShopDB;
+
+-- 1. Customers
+CREATE TABLE Customers (
+    CustomerID INT AUTO_INCREMENT PRIMARY KEY,
+    FirstName VARCHAR(100) NOT NULL,
+    LastName VARCHAR(100) NOT NULL,
+    Phone VARCHAR(50),
+    Email VARCHAR(100),
+    Address VARCHAR(255),
+    City VARCHAR(100),
+    State VARCHAR(100),
+    ZipCode VARCHAR(20),
+    RegistrationDate DATE DEFAULT CURRENT_DATE
+);
+
+-- 2. Vehicles
+CREATE TABLE Vehicles (
+    VehicleID INT AUTO_INCREMENT PRIMARY KEY,
+    CustomerID INT,
+    Make VARCHAR(100),
+    Model VARCHAR(100),
+    Year INT,
+    VIN VARCHAR(50) UNIQUE,
+    LicensePlate VARCHAR(20),
+    FOREIGN KEY (CustomerID) REFERENCES Customers(CustomerID)
+);
+
+-- 3. Employees
+CREATE TABLE Employees (
+    EmployeeID INT AUTO_INCREMENT PRIMARY KEY,
+    FirstName VARCHAR(100),
+    LastName VARCHAR(100),
+    Role VARCHAR(100), -- Mechanic, Receptionist, Manager
+    Phone VARCHAR(50),
+    Email VARCHAR(100),
+    HireDate DATE DEFAULT CURRENT_DATE,
+    Salary DECIMAL(10,2)
+);
+
+-- 4. Services
+CREATE TABLE Services (
+    ServiceID INT AUTO_INCREMENT PRIMARY KEY,
+    ServiceName VARCHAR(150) NOT NULL,
+    Description TEXT,
+    StandardLaborHours DECIMAL(4,2),
+    LaborRate DECIMAL(10,2),
+    Active BOOLEAN DEFAULT TRUE
+);
+
+-- 5. Suppliers
+CREATE TABLE Suppliers (
+    SupplierID INT AUTO_INCREMENT PRIMARY KEY,
+    SupplierName VARCHAR(150),
+    ContactPerson VARCHAR(100),
+    Phone VARCHAR(50),
+    Email VARCHAR(100),
+    Address VARCHAR(255)
+);
+
+-- 6. Parts
+CREATE TABLE Parts (
+    PartID INT AUTO_INCREMENT PRIMARY KEY,
+    PartName VARCHAR(150),
+    Description TEXT,
+    SupplierID INT,
+    QuantityInStock INT DEFAULT 0,
+    UnitPrice DECIMAL(10,2),
+    ReorderLevel INT DEFAULT 10,
+    FOREIGN KEY (SupplierID) REFERENCES Suppliers(SupplierID)
+);
+
+-- 7. Work Orders
+CREATE TABLE WorkOrders (
+    WorkOrderID INT AUTO_INCREMENT PRIMARY KEY,
+    VehicleID INT,
+    EmployeeID INT, -- Assigned mechanic
+    DateReceived DATE DEFAULT CURRENT_DATE,
+    ExpectedCompletion DATE,
+    ActualCompletion DATE,
+    Status VARCHAR(50) DEFAULT 'Open', -- Open, In Progress, Completed, Cancelled
+    Notes TEXT,
+    FOREIGN KEY (VehicleID) REFERENCES Vehicles(VehicleID),
+    FOREIGN KEY (EmployeeID) REFERENCES Employees(EmployeeID)
+);
+
+-- 8. Work Order Details
+CREATE TABLE WorkOrderDetails (
+    WorkOrderDetailID INT AUTO_INCREMENT PRIMARY KEY,
+    WorkOrderID INT,
+    ServiceID INT,
+    PartID INT NULL,
+    Quantity INT DEFAULT 1,
+    LaborHours DECIMAL(5,2),
+    LineTotal DECIMAL(10,2),
+    FOREIGN KEY (WorkOrderID) REFERENCES WorkOrders(WorkOrderID),
+    FOREIGN KEY (ServiceID) REFERENCES Services(ServiceID),
+    FOREIGN KEY (PartID) REFERENCES Parts(PartID)
+);
+
+-- 9. Invoices
+CREATE TABLE Invoices (
+    InvoiceID INT AUTO_INCREMENT PRIMARY KEY,
+    WorkOrderID INT,
+    InvoiceDate DATE DEFAULT CURRENT_DATE,
+    TotalAmount DECIMAL(10,2),
+    TaxAmount DECIMAL(10,2),
+    GrandTotal DECIMAL(10,2),
+    Status VARCHAR(50) DEFAULT 'Unpaid', -- Unpaid, Paid, Cancelled
+    FOREIGN KEY (WorkOrderID) REFERENCES WorkOrders(WorkOrderID)
+);
+
+-- 10. Payments
+CREATE TABLE Payments (
+    PaymentID INT AUTO_INCREMENT PRIMARY KEY,
+    InvoiceID INT,
+    PaymentDate DATE DEFAULT CURRENT_DATE,
+    Amount DECIMAL(10,2),
+    PaymentMethod VARCHAR(50), -- Cash, Card, Bank Transfer
+    ReferenceNumber VARCHAR(100),
+    Notes TEXT,
+    FOREIGN KEY (InvoiceID) REFERENCES Invoices(InvoiceID)
+);
+
+-- 🔹 Sample Data
+
+INSERT INTO Customers (FirstName, LastName, Phone, Email, City, State)
+VALUES
+('John', 'Doe', '555-1000', 'john.doe@email.com', 'Austin', 'TX'),
+('Lisa', 'Miller', '555-2000', 'lisa.miller@email.com', 'Dallas', 'TX');
+
+INSERT INTO Vehicles (CustomerID, Make, Model, Year, VIN, LicensePlate)
+VALUES
+(1, 'Toyota', 'Camry', 2018, '1HGCM82633A004352', 'ABC1234'),
+(2, 'Ford', 'F-150', 2020, '2FMGK5CC8EBD00984', 'XYZ5678');
+
+INSERT INTO Employees (FirstName, LastName, Role, Phone, Email, Salary)
+VALUES
+('Mike', 'Anderson', 'Mechanic', '555-3000', 'mike.a@autorepair.com', 4200.00),
+('Sarah', 'Lopez', 'Receptionist', '555-4000', 'sarah.l@autorepair.com', 3500.00);
+
+INSERT INTO Services (ServiceName, Description, StandardLaborHours, LaborRate)
+VALUES
+('Oil Change', 'Replace engine oil and filter', 1.0, 80.00),
+('Brake Replacement', 'Replace brake pads and inspect system', 2.5, 120.00),
+('Tire Rotation', 'Rotate tires and check pressure', 1.0, 60.00);
+
+INSERT INTO Suppliers (SupplierName, ContactPerson, Phone, Email)
+VALUES
+('AutoParts Depot', 'James Carter', '555-6000', 'sales@autopartsdepot.com'),
+('Speedy Parts Co.', 'Helen Kim', '555-7000', 'contact@speedyparts.com');
+
+INSERT INTO Parts (PartName, Description, SupplierID, QuantityInStock, UnitPrice)
+VALUES
+('Oil Filter', 'Standard oil filter for sedan', 1, 50, 15.00),
+('Brake Pads', 'Front brake pad set', 2, 30, 45.00),
+('Engine Oil (5W-30)', 'Synthetic engine oil 1L', 1, 100, 10.00);
