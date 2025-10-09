@@ -1,0 +1,134 @@
+-- ========================================
+-- EMPLOYEE AND ROLE MANAGEMENT
+-- ========================================
+CREATE TABLE roles (
+    role_id SERIAL PRIMARY KEY,
+    role_name VARCHAR(50) NOT NULL
+);
+
+CREATE TABLE employees (
+    employee_id SERIAL PRIMARY KEY,
+    first_name VARCHAR(50) NOT NULL,
+    last_name VARCHAR(50) NOT NULL,
+    phone VARCHAR(20),
+    email VARCHAR(100),
+    hire_date DATE NOT NULL DEFAULT CURRENT_DATE,
+    role_id INT REFERENCES roles(role_id),
+    salary DECIMAL(10,2)
+);
+
+-- ========================================
+-- CUSTOMERS & TABLE RESERVATIONS
+-- ========================================
+CREATE TABLE customers (
+    customer_id SERIAL PRIMARY KEY,
+    first_name VARCHAR(50) NOT NULL,
+    last_name VARCHAR(50),
+    phone VARCHAR(20),
+    email VARCHAR(100)
+);
+
+CREATE TABLE tables (
+    table_id SERIAL PRIMARY KEY,
+    table_number INT UNIQUE NOT NULL,
+    capacity INT NOT NULL,
+    status VARCHAR(20) DEFAULT 'Available'  -- Available, Reserved, Occupied
+);
+
+CREATE TABLE reservations (
+    reservation_id SERIAL PRIMARY KEY,
+    customer_id INT REFERENCES customers(customer_id),
+    table_id INT REFERENCES tables(table_id),
+    reservation_time TIMESTAMP NOT NULL,
+    num_guests INT NOT NULL,
+    special_request TEXT,
+    status VARCHAR(20) DEFAULT 'Pending' -- Pending, Confirmed, Cancelled
+);
+
+-- ========================================
+-- MENU MANAGEMENT
+-- ========================================
+CREATE TABLE menu_categories (
+    category_id SERIAL PRIMARY KEY,
+    category_name VARCHAR(50) NOT NULL
+);
+
+CREATE TABLE menu_items (
+    item_id SERIAL PRIMARY KEY,
+    category_id INT REFERENCES menu_categories(category_id),
+    item_name VARCHAR(100) NOT NULL,
+    description TEXT,
+    price DECIMAL(8,2) NOT NULL,
+    available BOOLEAN DEFAULT TRUE
+);
+
+-- ========================================
+-- ORDER & PAYMENT MANAGEMENT
+-- ========================================
+CREATE TABLE orders (
+    order_id SERIAL PRIMARY KEY,
+    customer_id INT REFERENCES customers(customer_id),
+    table_id INT REFERENCES tables(table_id),
+    employee_id INT REFERENCES employees(employee_id),
+    order_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    status VARCHAR(20) DEFAULT 'Open'  -- Open, Completed, Cancelled
+);
+
+CREATE TABLE order_items (
+    order_item_id SERIAL PRIMARY KEY,
+    order_id INT REFERENCES orders(order_id) ON DELETE CASCADE,
+    item_id INT REFERENCES menu_items(item_id),
+    quantity INT NOT NULL,
+    subtotal DECIMAL(10,2) GENERATED ALWAYS AS (quantity * (SELECT price FROM menu_items WHERE menu_items.item_id = order_items.item_id)) STORED
+);
+
+CREATE TABLE payments (
+    payment_id SERIAL PRIMARY KEY,
+    order_id INT REFERENCES orders(order_id),
+    amount DECIMAL(10,2) NOT NULL,
+    payment_method VARCHAR(20) NOT NULL, -- Cash, Credit, Debit, Online
+    payment_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ========================================
+-- INVENTORY & SUPPLIERS
+-- ========================================
+CREATE TABLE suppliers (
+    supplier_id SERIAL PRIMARY KEY,
+    supplier_name VARCHAR(100) NOT NULL,
+    contact_name VARCHAR(100),
+    phone VARCHAR(20),
+    email VARCHAR(100),
+    address TEXT
+);
+
+CREATE TABLE inventory (
+    item_id SERIAL PRIMARY KEY,
+    item_name VARCHAR(100) NOT NULL,
+    quantity INT NOT NULL,
+    unit VARCHAR(20),
+    reorder_level INT DEFAULT 10,
+    supplier_id INT REFERENCES suppliers(supplier_id)
+);
+
+-- ========================================
+-- SAMPLE DATA
+-- ========================================
+INSERT INTO roles (role_name) VALUES
+('Manager'), ('Chef'), ('Waiter'), ('Cashier');
+
+INSERT INTO menu_categories (category_name) VALUES
+('Appetizers'), ('Main Course'), ('Desserts'), ('Drinks');
+
+INSERT INTO menu_items (category_id, item_name, description, price) VALUES
+(1, 'Garlic Bread', 'Crispy bread with garlic butter', 4.99),
+(2, 'Grilled Salmon', 'Fresh salmon with herbs and lemon', 15.99),
+(3, 'Chocolate Cake', 'Rich and moist chocolate delight', 6.49),
+(4, 'Coca-Cola', 'Chilled soft drink', 1.99);
+
+INSERT INTO tables (table_number, capacity) VALUES
+(1, 2), (2, 4), (3, 4), (4, 6);
+
+INSERT INTO suppliers (supplier_name, contact_name, phone) VALUES
+('FreshFoods Co.', 'John Smith', '555-1010'),
+('Beverage Depot', 'Anna Lee', '555-2020');
